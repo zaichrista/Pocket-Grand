@@ -65,7 +65,7 @@ function generate(raw,keep){
 function describe(){
  let label=!goal?(received?'Someone sent you a tiny tune · Tap to unfold':'Tap to unfold the piano')
   :rec?(rec.t0===null?'Recording · Play your first note to begin':'Recording · Press stop when you are done')
-  :playing?'Playing…':'Drag to look around · Tap keys to play · Tap body to fold';
+  :playing?'Playing…':'Drag to look · Tap keys to play · Tap body to fold';
  scene.ariaLabel=label+' · Keyboard: A W S E D F T G Y H U J K. R records, P plays. Arrow keys rotate. Enter folds.';
  scene.removeAttribute('title');$('announce').textContent=label;$('hint').textContent=label;
  scene.style.cursor=goal?'grab':'pointer';sync();
@@ -75,9 +75,15 @@ function sync(){
  const n=notes(),msg=$('msg').value.trim();
 // Controls live in the side menu and work folded or unfolded.
  document.body.classList.toggle('recording',!!rec);
- $('rec').setAttribute('aria-pressed',!!rec);$('rec').lastElementChild.textContent=rec?'Stop':'Record';
+ $('rec').setAttribute('aria-pressed',!!rec);if(rec)$('rec').lastElementChild.textContent='Stop';
  $('playbtn').lastElementChild.textContent=playing?'Pause':'Play';$('playbtn').disabled=!n||!!rec;$('clear').disabled=!n&&!rec;
  $('count').textContent=n?`${n} note${n===1?'':'s'}`:'No notes yet';
+ const ready=readiness();
+ $('save').disabled=$('share').disabled=!n||!!rec||!ready;
+ $('where').hidden=!needsAddress();
+ const mine=received&&!rec;
+ $('lede').textContent=mine?'Someone sent you this tune. Replay it, or record one to send back.':'Hit record, play a few notes, then send your tune as a QR code.';
+ if(!rec)$('rec').lastElementChild.textContent=mine?'Make your own':'Record';
  $('note').textContent=msg;$('note').classList.toggle('show',!!(goal&&msg));
 }
 function project(x,y,z){
@@ -187,9 +193,12 @@ function toggle(){goal=1-goal;if(!goal){stopTune();if(rec)stopRec()}cancelAnimat
  sync();
  function step(time){const k=ms?clamp((time-now)/ms):1;phase=k===1?goal:start+(goal-start)*k;draw();if(k<1)frame=requestAnimationFrame(step);else{describe();if(goal&&autoplay){autoplay=false;setTimeout(playTune,250)}}}step(now)}
 // ms is how long the key stays lit; keys also sound for longer than they glow.
+// Browsers only allow sound after a tap or key press, so wake the audio engine on the first one.
+function unlock(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;audio??=new A();if(audio.state!=='running')audio.resume().catch(()=>{})}
+addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
 function play(note,ms=190){
  clearTimeout(pressed.get(note));pressed.set(note,setTimeout(()=>{pressed.delete(note);draw()},ms));draw();
- const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;audio??=new Audio();audio.resume().catch(()=>{});
+ unlock();if(!audio)return;
  for(const [h,vol] of [[1,.22],[2,.08],[3,.035],[5,.014]]){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.frequency.value=261.626*2**(note/12)*h;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+1.25/h);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+1.3)}
 }
 // A key the person pressed: it sounds, and lands on the tape if we are recording.
@@ -218,6 +227,7 @@ function stopRec(){
 }
 function clearTune(){stopTune();rec=null;steps=[];received=false;refresh();describe()}
 function tap(e){
+ if(phase!==0&&phase!==1)return; // let the fold or unfold finish
  if(phase===1){const r=scene.getBoundingClientRect(),x=(e.clientX-r.left)*scene.width/r.width,y=(e.clientY-r.top)*scene.height/r.height;
  const face=hits.findLast(f=>ctx.isPointInPath(f.path,x,y));if(face&&face.note!==null){strike(face.note);return}}
  toggle();
@@ -247,7 +257,7 @@ scene.onkeydown=e=>{
  }
  if(e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;
  if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}
- else if(phase===1&&e.key.length===1){const k=e.key.toLowerCase();
+ else if(goal===1&&e.key.length===1){const k=e.key.toLowerCase();
   if(k==='r')rec?stopRec():startRec();else if(k==='p')playing?stopTune():playTune();
   else{const n=keys.indexOf(k);if(n>=0)strike(n)}}
 };
@@ -255,8 +265,20 @@ document.addEventListener('keydown',()=>scene.classList.remove('pointer-focus'))
 // ---- Tiny Tunes: the tune lives in the link, so the QR carries it. ----
 // Once published, set HOME to your page's address (e.g. 'https://you.github.io/tiny-tunes/').
 // Left empty, a published page uses its own address, and a local preview uses a placeholder.
-const HOME='';
-const site=()=>HOME||(location.protocol.startsWith('http')?location.origin+location.pathname:'https://example.com/');
+const HOME='https://zaichrista.github.io/Pocket-Grand/';
+// A QR code is only useful if other people's phones can open its address, so a page opened from a
+// file or from localhost or a home network asks for the public address instead.
+const publicHost=()=>/^https?:$/.test(location.protocol)&&!/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0|\[::1\]|.*\.(local|lan|internal)$)/i.test(location.hostname);
+const needsAddress=()=>!HOME&&!publicHost();
+const stored=()=>{try{return localStorage.getItem('tt-home')||''}catch{return ''}};
+const remember=v=>{try{localStorage.setItem('tt-home',v)}catch{}};
+function cleanAddress(v){
+ v=v.trim();if(!v)return '';
+ if(!/^https?:\/\//i.test(v))v='https://'+v;
+ try{const u=new URL(v);if(!['http:','https:'].includes(u.protocol)||!u.hostname.includes('.'))return '';u.hash='';return u.href}catch{return ''}
+}
+const site=()=>HOME||(publicHost()?location.origin+location.pathname:cleanAddress(stored()))||(location.protocol.startsWith('http')?location.origin+location.pathname:'https://example.com/');
+const readiness=()=>!needsAddress()||!!cleanAddress(stored());
 function buildLink(){
  const url=new URL(site());url.hash='';
  const p=new URLSearchParams(),t=pack();
@@ -271,6 +293,12 @@ function refresh(){
 }
 function later(){clearTimeout(typing);typing=setTimeout(refresh,250);sync()}
 $('msg').oninput=later;
+$('home').value=stored();
+$('home').oninput=()=>{
+ const v=$('home').value,ok=!v.trim()||!!cleanAddress(v);
+ $('homeerr').hidden=ok;$('homeerr').textContent='That does not look like a web address.';
+ if(ok){remember(v.trim());later()}
+};
 document.querySelector('form').onsubmit=e=>e.preventDefault();
 $('rec').onclick=()=>rec?stopRec():startRec();
 $('playbtn').onclick=()=>playing?stopTune():playTune();
@@ -278,14 +306,20 @@ $('clear').onclick=clearTune;
 function download(href,name){const a=document.createElement('a');a.href=href;a.download=name;a.click()}
 function flash(button,text){const label=button.lastElementChild,old=label.textContent;label.textContent=text;setTimeout(()=>label.textContent=old,1600)}
 $('save').onclick=()=>{
- const n=code.moduleCount,cell=16,W=(n+8)*cell,img=document.createElement('canvas');img.width=W;img.height=W+76;
+ clearTimeout(typing);refresh();
+ const n=code.moduleCount,cell=16,W=(n+8)*cell,img=document.createElement('canvas'),msg=$('msg').value.trim();
+ const probe=document.createElement('canvas').getContext('2d');probe.font='italic 28px Georgia,serif';
+ const lines=[];let cur='';for(const word of msg.split(/\s+/).filter(Boolean)){const t=cur?cur+' '+word:word;if(cur&&probe.measureText(t).width>W-48){lines.push(cur);cur=word}else cur=t}if(cur)lines.push(cur);
+ img.width=W;img.height=W+76+lines.length*38;
  const c=img.getContext('2d');c.fillStyle='white';c.fillRect(0,0,img.width,img.height);
  c.fillStyle='#202320';for(const m of modules)if(m.dark)c.fillRect((m.col+4)*cell,(m.row+4)*cell,cell,cell);
  c.textAlign='center';c.font='600 30px system-ui,sans-serif';c.fillText('Tiny Tunes',W/2,W+4);
  c.fillStyle='#6b7266';c.font='22px system-ui,sans-serif';c.fillText('scan, then tap to unfold the piano',W/2,W+40);
+ c.fillStyle='#39433a';c.font='italic 28px Georgia,serif';lines.forEach((l,i)=>c.fillText(l,W/2,W+86+i*38));
  download(img.toDataURL(),'tiny-tunes-qr.png');
 };
 $('share').onclick=async()=>{
+ clearTimeout(typing);refresh();
  const m=$('msg').value.trim(),text=m?`${m} (a tiny tune for you)`:'A tiny tune for you';
  if(navigator.share){try{await navigator.share({title:'Tiny Tunes',text,url:link});return}catch(e){if(e.name==='AbortError')return}}
  try{await navigator.clipboard.writeText(link);flash($('share'),'Link copied')}catch{prompt('Copy this link',link)}
