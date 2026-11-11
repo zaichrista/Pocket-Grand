@@ -4,7 +4,7 @@ const scene=$('scene'), ctx=scene.getContext('2d');
 let modules=[], code, link, phase=0, goal=0, frame, audio, hits=[], pressed=new Map();
 // Tiny Tunes state: a tune is a row of steps, each a key (0-12) or a rest (null).
 const CH='0123456789abc', STEP=230, MAX=96, TWINKLE='0077997.5544220';
-let steps=[], rec=null, timers=[], playing=false, received=false, autoplay=false, typing;
+let runId=0, steps=[], rec=null, timers=[], playing=false, received=false, autoplay=false, typing;
 const unpack=s=>[...s].slice(0,MAX).map(c=>{const n=CH.indexOf(c);return n<0?null:n});
 const pack=()=>steps.map(n=>n===null||n===undefined?'.':CH[n]).join('').replace(/\.+$/,'');
 const orders=new Map();
@@ -67,23 +67,29 @@ function describe(){
   :rec?(rec.t0===null?'Recording · Play your first note to begin':'Recording · Press stop when you are done')
   :playing?'Playing…':'Drag to look · Tap keys to play · Tap body to fold';
  scene.ariaLabel=label+' · Keyboard: A W S E D F T G Y H U J K. R records, P plays. Arrow keys rotate. Enter folds.';
- scene.removeAttribute('title');$('announce').textContent=label;$('hint').textContent=label;
+ scene.removeAttribute('title');$('announce').textContent=label;$('hint').textContent=received&&!goal&&!rec?'':label;
  scene.style.cursor=goal?'grab':'pointer';sync();
 }
 // Keeps the menu controls, message card and button states in step with the app state.
 function sync(){
- const n=notes(),msg=$('msg').value.trim();
-// Controls live in the side menu and work folded or unfolded.
- document.body.classList.toggle('recording',!!rec);
- $('rec').setAttribute('aria-pressed',!!rec);if(rec)$('rec').lastElementChild.textContent='Stop';
- $('playbtn').lastElementChild.textContent=playing?'Pause':'Play';$('playbtn').disabled=!n||!!rec;$('clear').disabled=!n&&!rec;
- $('count').textContent=n?`${n} note${n===1?'':'s'}`:'No notes yet';
+ const n=notes(),msg=$('msg').value.trim(),busy=!!rec,got=received&&!busy;
+ document.body.classList.toggle('recording',busy);document.body.classList.toggle('received',got);
+ // Step 1: record and listen
+ $('rec').setAttribute('aria-pressed',busy);$('rec').lastElementChild.textContent=busy?'Stop':n?'Record again':'Record';
+ $('playbtn').lastElementChild.textContent=playing?'Pause':'Play';$('playbtn').disabled=!n||busy;$('clear').disabled=!n&&!busy;
+ $('status').textContent=busy?(rec.t0===null?'Now tap the piano keys. Your first note starts the recording.':`Recording ${n} note${n===1?'':'s'}. Tap Stop when you are done.`)
+  :playing?'Playing your tune…'
+  :n?`${n} note${n===1?'':'s'} recorded. Press Play to hear it, or Record again to start over.`
+  :'Press Record, then tap the piano keys. On a keyboard, use A S D F G H J K.';
+ // Step 3: send
  const ready=readiness();
- $('save').disabled=$('share').disabled=!n||!!rec||!ready;
+ $('save').disabled=$('share').disabled=!n||busy||!ready;
  $('where').hidden=!needsAddress();
- const mine=received&&!rec;
- $('lede').textContent=mine?'Someone sent you this tune. Replay it, or record one to send back.':'Hit record, play a few notes, then send your tune as a QR code.';
- if(!rec)$('rec').lastElementChild.textContent=mine?'Make your own':'Record';
+ $('sendnote').textContent=n&&!busy?'Whoever scans the QR code hears your tune.':'Record a tune first, then you can send it.';
+ $('fold').textContent=goal?'See what your QR code looks like':'Back to the piano';$('fold').disabled=busy;
+ // What a person who was sent a tune sees
+ $('gotmsg').textContent=msg?`\u201c${msg}\u201d`:'Someone made you a little tune.';
+ $('open').lastElementChild.textContent=!goal?'Open & play':playing?'Pause':'Play again';
  $('note').textContent=msg;$('note').classList.toggle('show',!!(goal&&msg));
 }
 function project(x,y,z){
@@ -194,12 +200,36 @@ function toggle(){goal=1-goal;if(!goal){stopTune();if(rec)stopRec()}cancelAnimat
  function step(time){const k=ms?clamp((time-now)/ms):1;phase=k===1?goal:start+(goal-start)*k;draw();if(k<1)frame=requestAnimationFrame(step);else{describe();if(goal&&autoplay){autoplay=false;setTimeout(playTune,250)}}}step(now)}
 // ms is how long the key stays lit; keys also sound for longer than they glow.
 // Browsers only allow sound after a tap or key press, so wake the audio engine on the first one.
-function unlock(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;audio??=new A();if(audio.state!=='running')audio.resume().catch(()=>{})}
+let bus,silent;
+function unlock(){
+ const A=window.AudioContext||window.webkitAudioContext;if(!A)return;
+ if(!audio){
+  audio=new A();
+  // A gentle compressor stops loud overlaps from crackling; the master gain sets overall volume.
+  const comp=audio.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=6;
+  bus=audio.createGain();bus.gain.value=1.4;bus.connect(comp).connect(audio.destination);
+ }
+ // iPhones mute web audio when the ring/silent switch is off, unless the page counts as media playback.
+ try{if(navigator.audioSession)navigator.audioSession.type='playback';
+  else if(!silent&&/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document){
+   const r=8000,n=r/4,b=new DataView(new ArrayBuffer(44+n*2)),w=(o,t)=>[...t].forEach((c,k)=>b.setUint8(o+k,c.charCodeAt(0)));
+   w(0,'RIFF');b.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);b.setUint32(24,r,true);b.setUint32(28,r*2,true);b.setUint16(32,2,true);b.setUint16(34,16,true);w(36,'data');b.setUint32(40,n*2,true);
+   silent=new Audio(URL.createObjectURL(new Blob([b],{type:'audio/wav'})));silent.loop=true;silent.play().catch(()=>{});
+  }}catch{}
+ if(audio.state!=='running')return audio.resume().catch(()=>{});
+}
 addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
+// A soft piano-like note: a few harmonics through a filter that darkens as the note fades.
 function play(note,ms=190){
  clearTimeout(pressed.get(note));pressed.set(note,setTimeout(()=>{pressed.delete(note);draw()},ms));draw();
  unlock();if(!audio)return;
- for(const [h,vol] of [[1,.22],[2,.08],[3,.035],[5,.014]]){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.frequency.value=261.626*2**(note/12)*h;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+1.25/h);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+1.3)}
+ const t=audio.currentTime+.01,f0=261.626*2**(note/12),life=2.4-note*.07;
+ const tone=audio.createBiquadFilter();tone.type='lowpass';tone.frequency.setValueAtTime(Math.min(7000,f0*9),t);tone.frequency.exponentialRampToValueAtTime(Math.max(900,f0*2),t+life*.6);tone.connect(bus);
+ for(const [h,vol] of [[1,.32],[2,.14],[3,.07],[4,.035],[6,.015]]){
+  const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=f0*h*(h>1?1.0006:1);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.006);g.gain.exponentialRampToValueAtTime(vol*.35,t+.18/Math.sqrt(h));g.gain.exponentialRampToValueAtTime(.0001,t+life/Math.pow(h,.6));
+  o.connect(g).connect(tone);o.start(t);o.stop(t+life+.1);
+ }
 }
 // A key the person pressed: it sounds, and lands on the tape if we are recording.
 function strike(note){
@@ -211,11 +241,17 @@ function strike(note){
 }
 function playTune(){
  if(!notes()||rec)return;
- if(!goal){autoplay=true;toggle();return}stopTune();playing=true;const ms=STEP;
- steps.forEach((n,i)=>{if(n!=null)timers.push(setTimeout(()=>play(n,Math.max(190,ms*.85)),120+i*ms))});
- timers.push(setTimeout(stopTune,steps.length*ms+700));describe();
+ if(!goal){autoplay=true;toggle();return}stopTune();
+ const ms=STEP,run=++runId;
+ const go=()=>{if(run!==runId)return;playing=true;
+  steps.forEach((n,i)=>{if(n!=null)timers.push(setTimeout(()=>play(n,Math.max(190,ms*.85)),120+i*ms))});
+  timers.push(setTimeout(stopTune,steps.length*ms+700));describe()};
+ // If the browser has not allowed sound yet (no tap so far), wait for the next tap instead of playing silently.
+ unlock();if(audio&&audio.state!=='running'){
+  $('hint').textContent='Tap anywhere to turn the sound on';audio.addEventListener('statechange',function f(){if(audio.state==='running'){audio.removeEventListener('statechange',f);describe();go()}});return}
+ go();
 }
-function stopTune(){timers.forEach(clearTimeout);timers=[];if(playing){playing=false;describe()}}
+function stopTune(){runId++;timers.forEach(clearTimeout);timers=[];if(playing){playing=false;describe()}}
 function startRec(){
  if(!goal)toggle();
  stopTune();if(received){$('msg').value='';received=false}
@@ -225,7 +261,7 @@ function stopRec(){
  rec=null;while(steps.length&&steps[steps.length-1]==null)steps.pop();
  refresh();describe();
 }
-function clearTune(){stopTune();rec=null;steps=[];received=false;refresh();describe()}
+function clearTune(){stopTune();rec=null;steps=[];if(received)$('msg').value='';received=false;refresh();describe()}
 function tap(e){
  if(phase!==0&&phase!==1)return; // let the fold or unfold finish
  if(phase===1){const r=scene.getBoundingClientRect(),x=(e.clientX-r.left)*scene.width/r.width,y=(e.clientY-r.top)*scene.height/r.height;
@@ -233,7 +269,18 @@ function tap(e){
  toggle();
 }
 scene.onpointerdown=e=>{
- if(pointer||e.button!==0)return;
+ if(e.button!==0)return;
+ // A piano key sounds the moment it is pressed (not when released), and each finger can press its own key.
+ if(phase===1){
+  const r=scene.getBoundingClientRect(),x=(e.clientX-r.left)*scene.width/r.width,y=(e.clientY-r.top)*scene.height/r.height;
+  const face=hits.findLast(f=>ctx.isPointInPath(f.path,x,y));
+  if(face&&face.note!==null){
+   strike(face.note);scene.classList.add('pointer-focus');
+   if(!pointer){pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,drag:true,orbit:false};scene.setPointerCapture(e.pointerId)}
+   return;
+  }
+ }
+ if(pointer)return;
  scene.classList.add('pointer-focus');scene.focus({preventScroll:true});scene.setPointerCapture(e.pointerId);
  pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,drag:false,orbit:phase===1};
 };
@@ -302,6 +349,10 @@ $('home').oninput=()=>{
 document.querySelector('form').onsubmit=e=>e.preventDefault();
 $('rec').onclick=()=>rec?stopRec():startRec();
 $('playbtn').onclick=()=>playing?stopTune():playTune();
+$('open').onclick=()=>playing?stopTune():playTune();
+$('fold').onclick=()=>toggle();
+function makeOwn(){stopTune();rec=null;steps=[];$('msg').value='';received=false;try{history.replaceState(null,'',location.pathname+location.search)}catch{}if(!goal)toggle();refresh();describe()}
+$('mine').onclick=makeOwn;
 $('clear').onclick=clearTune;
 function download(href,name){const a=document.createElement('a');a.href=href;a.download=name;a.click()}
 function flash(button,text){const label=button.lastElementChild,old=label.textContent;label.textContent=text;setTimeout(()=>label.textContent=old,1600)}
@@ -333,9 +384,9 @@ function openFromHash(first){
   $('msg').value=(given.get('m')||'').slice(0,80);received=true;
   // Already unfolded (a new link opened in this tab)? Play it right away.
   if(goal)setTimeout(playTune,250);else autoplay=true;
- }else if(first)steps=unpack(TWINKLE);else return;
+ }else if(first)steps=[];else return;
  try{generate(buildLink(),!first)}catch{generate('https://example.com/',!first)}
 }
-openFromHash(true);resize();
+openFromHash(true);if(!received){goal=phase=1;draw();describe()}resize();
 new ResizeObserver(resize).observe(scene);
 addEventListener('hashchange',()=>openFromHash(false));

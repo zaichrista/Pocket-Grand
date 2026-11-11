@@ -10,7 +10,17 @@ canvas.pointer-focus:focus-visible{outline:none}
 
 /* ---- the bubbly menu ---- */
 #menu{position:fixed;z-index:2;right:max(24px,env(safe-area-inset-right));top:max(24px,env(safe-area-inset-top));width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 48px);overflow:auto;padding:30px 30px 28px;background:#fff;border:3px solid var(--butter);border-radius:36px}
-#menu h1{margin:0;font:800 28px/1.1 var(--font);letter-spacing:-.02em}
+#menu h1{margin:0 0 14px;font:800 28px/1.1 var(--font);letter-spacing:-.02em}
+.steps{list-style:none;margin:0;padding:0}.steps li{margin:0 0 22px}.steps li:last-child{margin-bottom:0}
+.steps h2{display:flex;align-items:center;gap:10px;margin:0 0 10px;font:800 18px/1.2 var(--font)}
+.steps h2 em{font-style:normal;font-weight:600;color:var(--soft);font-size:15px}
+.steps h2 b{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--butter);font-size:14px}
+.status{margin:12px 2px 0;font-size:15px;line-height:1.35;color:var(--soft);font-weight:600}
+#menu .link{margin-top:10px;background:none;padding:6px 2px;font-size:15px;color:var(--soft);text-decoration:underline;text-underline-offset:3px;box-shadow:none}
+#menu .link:disabled{opacity:.4}
+.steps h2+.pair{margin-top:0}.receiver{display:none}.received .receiver{display:block}.received .composer{display:none}
+.got{margin:0 0 18px;font:italic 22px/1.35 Georgia,'Times New Roman',serif;color:#39433a;overflow-wrap:anywhere}
+.receiver .ghost{width:100%;margin-top:14px;min-height:54px;border-radius:999px}
 .lede{margin:8px 0 18px;color:var(--soft);font-size:16px}
 #menu button{font:700 17px var(--font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;color:var(--ink);transition:transform .12s,box-shadow .12s,background .15s}
 #menu button:disabled{cursor:default;opacity:.45}
@@ -30,14 +40,14 @@ canvas.pointer-focus:focus-visible{outline:none}
 .mint:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--mint-d)}
 .butter:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--butter-d)}
 .chip{display:inline-flex;gap:7px;align-items:center;margin:20px 0 4px;padding:6px 14px;background:#fff7dc;border-radius:999px;font-weight:700;font-size:15px;color:#7a5c0b}
-.field{display:block;margin-top:18px}
+.field{display:block}
 .field>span,.field label{display:block;margin-bottom:8px;font-weight:800;font-size:16px}
 .field em{font-style:normal;font-weight:600;color:var(--soft);font-size:14px}
 input{width:100%;padding:14px 18px;border:2px solid var(--line);border-radius:22px;background:#fffefb;color:var(--ink);font:600 17px var(--font);transition:border-color .15s,box-shadow .15s}
 input::placeholder{color:#b1b4a8;font-weight:500}
 input:focus{outline:none;border-color:var(--butter-d);box-shadow:0 0 0 5px #fbe39a66}
 #error,#homeerr{display:block;margin-top:10px;color:#b23b27;font-weight:600;font-size:14px}
-.send{margin-top:16px}.send button{width:100%;min-height:54px;border-radius:999px}
+.steps .field{margin:0}
 #where{margin-top:14px}#where label{display:block;margin-bottom:8px;font-weight:800;font-size:16px}#where[hidden],#error[hidden],#homeerr[hidden]{display:none}
 .ghost{background:#fff!important;border:2px solid var(--line)!important;box-shadow:0 4px 0 var(--line)}
 .ghost:hover{transform:translateY(-2px);border-color:var(--butter-d)!important}
@@ -69,7 +79,7 @@ input:focus{outline:none;border-color:var(--butter-d);box-shadow:0 0 0 5px #fbe3
 /* Phones and small tablets: the menu is a bubbly sheet at the bottom. */
 @media (max-width:899px){
  #menu{top:auto;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;width:auto;transform:none;padding:18px 16px 16px;border-radius:30px;max-height:58dvh}
- #menu h1,.lede{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .composer h1{display:none}.steps li{margin-bottom:12px}.steps h2{font-size:15px;margin-bottom:7px}.steps h2 b{width:22px;height:22px;font-size:12px}.status{margin-top:8px;font-size:13.5px}.received h1{font-size:22px;margin-bottom:8px}.got{font-size:19px;margin-bottom:12px}
  #menu{padding:14px 14px 14px}
  .big{min-height:54px}
  .pair{margin-top:10px;gap:8px}
@@ -89,24 +99,29 @@ input:focus{outline:none;border-color:var(--butter-d);box-shadow:0 0 0 5px #fbe3
 <noscript><p style="position:fixed;inset:40% 20px auto;text-align:center;font:600 18px system-ui">Tiny Tunes needs JavaScript to play piano and make QR codes.</p></noscript>
 <p id="note" class="note" aria-live="polite"></p>
 <aside id="menu" aria-label="Make a tiny tune">
+<section class="composer">
 <h1>Make a tiny tune</h1>
-<p id="lede" class="lede">Hit record, play a few notes, then send your tune as a QR code.</p>
+<ol class="steps">
+<li><h2><b>1</b> Play your tune</h2>
 <button id="rec" class="big" type="button" aria-pressed="false"><i class="dot" aria-hidden="true"></i><span>Record</span></button>
-<div class="pair">
-<button id="playbtn" class="mint" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button>
-<button id="clear" class="butter" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Clear</span></button>
-<button type="button" id="save" class="blush"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>Save QR</span></button>
-</div>
-<p class="chip"><span aria-hidden="true">&#9834;</span> <span id="count">No notes yet</span></p>
-<form class="field">
-<label for="msg">Say something sweet <em>(optional)</em></label><input id="msg" type="text" maxlength="80" autocomplete="off" placeholder="Happy birthday, Sam!">
-<small id="error" role="alert" hidden></small>
-<div id="where" hidden><label for="home">Page address <em>(where you published this)</em></label><input id="home" type="url" inputmode="url" autocomplete="off" placeholder="https://you.github.io/tiny-tunes/"><small id="homeerr" role="alert" hidden></small></div>
-<div class="send">
-
-<button type="button" id="share" class="ghost"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg><span>Share link</span></button>
-</div></form></aside>
-<p id="hint" class="hint">Tap to unfold the piano</p><p id="announce" class="sr" aria-live="polite"></p><script>const QRCode=(()=>{const factories={'QRUtil':function(module,exports,require){
+<div class="pair"><button id="playbtn" class="mint" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button><button id="clear" class="butter" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Clear</span></button></div>
+<p id="status" class="status" aria-live="polite"></p></li>
+<li><h2><b>2</b> Add a message <em>(optional)</em></h2>
+<form class="field"><label class="sr" for="msg">Message</label><input id="msg" type="text" maxlength="80" autocomplete="off" placeholder="Happy birthday, Sam!"><small id="error" role="alert" hidden></small><div id="where" hidden><label for="home">Page address <em>(where you published this)</em></label><input id="home" type="url" inputmode="url" autocomplete="off" placeholder="https://you.github.io/tiny-tunes/"><small id="homeerr" role="alert" hidden></small></div></form></li>
+<li><h2><b>3</b> Send it</h2>
+<div class="pair"><button type="button" id="save" class="blush"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>Save QR</span></button><button type="button" id="share" class="ghost"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg><span>Share link</span></button></div>
+<p id="sendnote" class="status"></p>
+<button type="button" id="fold" class="link"></button></li>
+</ol>
+</section>
+<section class="receiver">
+<h1>You got a tiny tune</h1>
+<p id="gotmsg" class="got"></p>
+<button id="open" class="big" type="button"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Open &amp; play</span></button>
+<button id="mine" class="ghost" type="button"><span>Make your own</span></button>
+</section>
+</aside>
+<p id="hint" class="hint"></p><p id="announce" class="sr" aria-live="polite"></p><script>const QRCode=(()=>{const factories={'QRUtil':function(module,exports,require){
 var QRMode = require('./QRMode');
 var QRPolynomial = require('./QRPolynomial');
 var QRMath = require('./QRMath');
@@ -1366,7 +1381,7 @@ const scene=$('scene'), ctx=scene.getContext('2d');
 let modules=[], code, link, phase=0, goal=0, frame, audio, hits=[], pressed=new Map();
 // Tiny Tunes state: a tune is a row of steps, each a key (0-12) or a rest (null).
 const CH='0123456789abc', STEP=230, MAX=96, TWINKLE='0077997.5544220';
-let steps=[], rec=null, timers=[], playing=false, received=false, autoplay=false, typing;
+let runId=0, steps=[], rec=null, timers=[], playing=false, received=false, autoplay=false, typing;
 const unpack=s=>[...s].slice(0,MAX).map(c=>{const n=CH.indexOf(c);return n<0?null:n});
 const pack=()=>steps.map(n=>n===null||n===undefined?'.':CH[n]).join('').replace(/\.+$/,'');
 const orders=new Map();
@@ -1429,23 +1444,29 @@ function describe(){
   :rec?(rec.t0===null?'Recording · Play your first note to begin':'Recording · Press stop when you are done')
   :playing?'Playing…':'Drag to look · Tap keys to play · Tap body to fold';
  scene.ariaLabel=label+' · Keyboard: A W S E D F T G Y H U J K. R records, P plays. Arrow keys rotate. Enter folds.';
- scene.removeAttribute('title');$('announce').textContent=label;$('hint').textContent=label;
+ scene.removeAttribute('title');$('announce').textContent=label;$('hint').textContent=received&&!goal&&!rec?'':label;
  scene.style.cursor=goal?'grab':'pointer';sync();
 }
 // Keeps the menu controls, message card and button states in step with the app state.
 function sync(){
- const n=notes(),msg=$('msg').value.trim();
-// Controls live in the side menu and work folded or unfolded.
- document.body.classList.toggle('recording',!!rec);
- $('rec').setAttribute('aria-pressed',!!rec);if(rec)$('rec').lastElementChild.textContent='Stop';
- $('playbtn').lastElementChild.textContent=playing?'Pause':'Play';$('playbtn').disabled=!n||!!rec;$('clear').disabled=!n&&!rec;
- $('count').textContent=n?`${n} note${n===1?'':'s'}`:'No notes yet';
+ const n=notes(),msg=$('msg').value.trim(),busy=!!rec,got=received&&!busy;
+ document.body.classList.toggle('recording',busy);document.body.classList.toggle('received',got);
+ // Step 1: record and listen
+ $('rec').setAttribute('aria-pressed',busy);$('rec').lastElementChild.textContent=busy?'Stop':n?'Record again':'Record';
+ $('playbtn').lastElementChild.textContent=playing?'Pause':'Play';$('playbtn').disabled=!n||busy;$('clear').disabled=!n&&!busy;
+ $('status').textContent=busy?(rec.t0===null?'Now tap the piano keys. Your first note starts the recording.':`Recording ${n} note${n===1?'':'s'}. Tap Stop when you are done.`)
+  :playing?'Playing your tune…'
+  :n?`${n} note${n===1?'':'s'} recorded. Press Play to hear it, or Record again to start over.`
+  :'Press Record, then tap the piano keys. On a keyboard, use A S D F G H J K.';
+ // Step 3: send
  const ready=readiness();
- $('save').disabled=$('share').disabled=!n||!!rec||!ready;
+ $('save').disabled=$('share').disabled=!n||busy||!ready;
  $('where').hidden=!needsAddress();
- const mine=received&&!rec;
- $('lede').textContent=mine?'Someone sent you this tune. Replay it, or record one to send back.':'Hit record, play a few notes, then send your tune as a QR code.';
- if(!rec)$('rec').lastElementChild.textContent=mine?'Make your own':'Record';
+ $('sendnote').textContent=n&&!busy?'Whoever scans the QR code hears your tune.':'Record a tune first, then you can send it.';
+ $('fold').textContent=goal?'See what your QR code looks like':'Back to the piano';$('fold').disabled=busy;
+ // What a person who was sent a tune sees
+ $('gotmsg').textContent=msg?`\u201c${msg}\u201d`:'Someone made you a little tune.';
+ $('open').lastElementChild.textContent=!goal?'Open & play':playing?'Pause':'Play again';
  $('note').textContent=msg;$('note').classList.toggle('show',!!(goal&&msg));
 }
 function project(x,y,z){
@@ -1556,12 +1577,36 @@ function toggle(){goal=1-goal;if(!goal){stopTune();if(rec)stopRec()}cancelAnimat
  function step(time){const k=ms?clamp((time-now)/ms):1;phase=k===1?goal:start+(goal-start)*k;draw();if(k<1)frame=requestAnimationFrame(step);else{describe();if(goal&&autoplay){autoplay=false;setTimeout(playTune,250)}}}step(now)}
 // ms is how long the key stays lit; keys also sound for longer than they glow.
 // Browsers only allow sound after a tap or key press, so wake the audio engine on the first one.
-function unlock(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;audio??=new A();if(audio.state!=='running')audio.resume().catch(()=>{})}
+let bus,silent;
+function unlock(){
+ const A=window.AudioContext||window.webkitAudioContext;if(!A)return;
+ if(!audio){
+  audio=new A();
+  // A gentle compressor stops loud overlaps from crackling; the master gain sets overall volume.
+  const comp=audio.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=6;
+  bus=audio.createGain();bus.gain.value=1.4;bus.connect(comp).connect(audio.destination);
+ }
+ // iPhones mute web audio when the ring/silent switch is off, unless the page counts as media playback.
+ try{if(navigator.audioSession)navigator.audioSession.type='playback';
+  else if(!silent&&/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document){
+   const r=8000,n=r/4,b=new DataView(new ArrayBuffer(44+n*2)),w=(o,t)=>[...t].forEach((c,k)=>b.setUint8(o+k,c.charCodeAt(0)));
+   w(0,'RIFF');b.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);b.setUint32(24,r,true);b.setUint32(28,r*2,true);b.setUint16(32,2,true);b.setUint16(34,16,true);w(36,'data');b.setUint32(40,n*2,true);
+   silent=new Audio(URL.createObjectURL(new Blob([b],{type:'audio/wav'})));silent.loop=true;silent.play().catch(()=>{});
+  }}catch{}
+ if(audio.state!=='running')return audio.resume().catch(()=>{});
+}
 addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
+// A soft piano-like note: a few harmonics through a filter that darkens as the note fades.
 function play(note,ms=190){
  clearTimeout(pressed.get(note));pressed.set(note,setTimeout(()=>{pressed.delete(note);draw()},ms));draw();
  unlock();if(!audio)return;
- for(const [h,vol] of [[1,.22],[2,.08],[3,.035],[5,.014]]){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.frequency.value=261.626*2**(note/12)*h;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+1.25/h);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+1.3)}
+ const t=audio.currentTime+.01,f0=261.626*2**(note/12),life=2.4-note*.07;
+ const tone=audio.createBiquadFilter();tone.type='lowpass';tone.frequency.setValueAtTime(Math.min(7000,f0*9),t);tone.frequency.exponentialRampToValueAtTime(Math.max(900,f0*2),t+life*.6);tone.connect(bus);
+ for(const [h,vol] of [[1,.32],[2,.14],[3,.07],[4,.035],[6,.015]]){
+  const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=f0*h*(h>1?1.0006:1);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.006);g.gain.exponentialRampToValueAtTime(vol*.35,t+.18/Math.sqrt(h));g.gain.exponentialRampToValueAtTime(.0001,t+life/Math.pow(h,.6));
+  o.connect(g).connect(tone);o.start(t);o.stop(t+life+.1);
+ }
 }
 // A key the person pressed: it sounds, and lands on the tape if we are recording.
 function strike(note){
@@ -1573,11 +1618,17 @@ function strike(note){
 }
 function playTune(){
  if(!notes()||rec)return;
- if(!goal){autoplay=true;toggle();return}stopTune();playing=true;const ms=STEP;
- steps.forEach((n,i)=>{if(n!=null)timers.push(setTimeout(()=>play(n,Math.max(190,ms*.85)),120+i*ms))});
- timers.push(setTimeout(stopTune,steps.length*ms+700));describe();
+ if(!goal){autoplay=true;toggle();return}stopTune();
+ const ms=STEP,run=++runId;
+ const go=()=>{if(run!==runId)return;playing=true;
+  steps.forEach((n,i)=>{if(n!=null)timers.push(setTimeout(()=>play(n,Math.max(190,ms*.85)),120+i*ms))});
+  timers.push(setTimeout(stopTune,steps.length*ms+700));describe()};
+ // If the browser has not allowed sound yet (no tap so far), wait for the next tap instead of playing silently.
+ unlock();if(audio&&audio.state!=='running'){
+  $('hint').textContent='Tap anywhere to turn the sound on';audio.addEventListener('statechange',function f(){if(audio.state==='running'){audio.removeEventListener('statechange',f);describe();go()}});return}
+ go();
 }
-function stopTune(){timers.forEach(clearTimeout);timers=[];if(playing){playing=false;describe()}}
+function stopTune(){runId++;timers.forEach(clearTimeout);timers=[];if(playing){playing=false;describe()}}
 function startRec(){
  if(!goal)toggle();
  stopTune();if(received){$('msg').value='';received=false}
@@ -1587,7 +1638,7 @@ function stopRec(){
  rec=null;while(steps.length&&steps[steps.length-1]==null)steps.pop();
  refresh();describe();
 }
-function clearTune(){stopTune();rec=null;steps=[];received=false;refresh();describe()}
+function clearTune(){stopTune();rec=null;steps=[];if(received)$('msg').value='';received=false;refresh();describe()}
 function tap(e){
  if(phase!==0&&phase!==1)return; // let the fold or unfold finish
  if(phase===1){const r=scene.getBoundingClientRect(),x=(e.clientX-r.left)*scene.width/r.width,y=(e.clientY-r.top)*scene.height/r.height;
@@ -1595,7 +1646,18 @@ function tap(e){
  toggle();
 }
 scene.onpointerdown=e=>{
- if(pointer||e.button!==0)return;
+ if(e.button!==0)return;
+ // A piano key sounds the moment it is pressed (not when released), and each finger can press its own key.
+ if(phase===1){
+  const r=scene.getBoundingClientRect(),x=(e.clientX-r.left)*scene.width/r.width,y=(e.clientY-r.top)*scene.height/r.height;
+  const face=hits.findLast(f=>ctx.isPointInPath(f.path,x,y));
+  if(face&&face.note!==null){
+   strike(face.note);scene.classList.add('pointer-focus');
+   if(!pointer){pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,drag:true,orbit:false};scene.setPointerCapture(e.pointerId)}
+   return;
+  }
+ }
+ if(pointer)return;
  scene.classList.add('pointer-focus');scene.focus({preventScroll:true});scene.setPointerCapture(e.pointerId);
  pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,drag:false,orbit:phase===1};
 };
@@ -1664,6 +1726,10 @@ $('home').oninput=()=>{
 document.querySelector('form').onsubmit=e=>e.preventDefault();
 $('rec').onclick=()=>rec?stopRec():startRec();
 $('playbtn').onclick=()=>playing?stopTune():playTune();
+$('open').onclick=()=>playing?stopTune():playTune();
+$('fold').onclick=()=>toggle();
+function makeOwn(){stopTune();rec=null;steps=[];$('msg').value='';received=false;try{history.replaceState(null,'',location.pathname+location.search)}catch{}if(!goal)toggle();refresh();describe()}
+$('mine').onclick=makeOwn;
 $('clear').onclick=clearTune;
 function download(href,name){const a=document.createElement('a');a.href=href;a.download=name;a.click()}
 function flash(button,text){const label=button.lastElementChild,old=label.textContent;label.textContent=text;setTimeout(()=>label.textContent=old,1600)}
@@ -1695,10 +1761,10 @@ function openFromHash(first){
   $('msg').value=(given.get('m')||'').slice(0,80);received=true;
   // Already unfolded (a new link opened in this tab)? Play it right away.
   if(goal)setTimeout(playTune,250);else autoplay=true;
- }else if(first)steps=unpack(TWINKLE);else return;
+ }else if(first)steps=[];else return;
  try{generate(buildLink(),!first)}catch{generate('https://example.com/',!first)}
 }
-openFromHash(true);resize();
+openFromHash(true);if(!received){goal=phase=1;draw();describe()}resize();
 new ResizeObserver(resize).observe(scene);
 addEventListener('hashchange',()=>openFromHash(false));
 </script></body></html>

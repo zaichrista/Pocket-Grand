@@ -4,21 +4,26 @@
 <noscript><p style="position:fixed;inset:40% 20px auto;text-align:center;font:600 18px system-ui">Tiny Tunes needs JavaScript to play piano and make QR codes.</p></noscript>
 <p id="note" class="note" aria-live="polite"></p>
 <aside id="menu" aria-label="Make a tiny tune">
+<section class="composer">
 <h1>Make a tiny tune</h1>
-<p id="lede" class="lede">Hit record, play a few notes, then send your tune as a QR code.</p>
+<ol class="steps">
+<li><h2><b>1</b> Play your tune</h2>
 <button id="rec" class="big" type="button" aria-pressed="false"><i class="dot" aria-hidden="true"></i><span>Record</span></button>
-<div class="pair">
-<button id="playbtn" class="mint" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button>
-<button id="clear" class="butter" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Clear</span></button>
-<button type="button" id="save" class="blush"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>Save QR</span></button>
-</div>
-<p class="chip"><span aria-hidden="true">&#9834;</span> <span id="count">No notes yet</span></p>
-<form class="field">
-<label for="msg">Say something sweet <em>(optional)</em></label><input id="msg" type="text" maxlength="80" autocomplete="off" placeholder="Happy birthday, Sam!">
-<small id="error" role="alert" hidden></small>
-<div id="where" hidden><label for="home">Page address <em>(where you published this)</em></label><input id="home" type="url" inputmode="url" autocomplete="off" placeholder="https://you.github.io/tiny-tunes/"><small id="homeerr" role="alert" hidden></small></div>
-<div class="send">
-
-<button type="button" id="share" class="ghost"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg><span>Share link</span></button>
-</div></form></aside>
-<p id="hint" class="hint">Tap to unfold the piano</p><p id="announce" class="sr" aria-live="polite"></p><script src="qr.js"></script><script src="grand.js"></script></body></html>
+<div class="pair"><button id="playbtn" class="mint" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Play</span></button><button id="clear" class="butter" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Clear</span></button></div>
+<p id="status" class="status" aria-live="polite"></p></li>
+<li><h2><b>2</b> Add a message <em>(optional)</em></h2>
+<form class="field"><label class="sr" for="msg">Message</label><input id="msg" type="text" maxlength="80" autocomplete="off" placeholder="Happy birthday, Sam!"><small id="error" role="alert" hidden></small><div id="where" hidden><label for="home">Page address <em>(where you published this)</em></label><input id="home" type="url" inputmode="url" autocomplete="off" placeholder="https://you.github.io/tiny-tunes/"><small id="homeerr" role="alert" hidden></small></div></form></li>
+<li><h2><b>3</b> Send it</h2>
+<div class="pair"><button type="button" id="save" class="blush"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>Save QR</span></button><button type="button" id="share" class="ghost"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg><span>Share link</span></button></div>
+<p id="sendnote" class="status"></p>
+<button type="button" id="fold" class="link"></button></li>
+</ol>
+</section>
+<section class="receiver">
+<h1>You got a tiny tune</h1>
+<p id="gotmsg" class="got"></p>
+<button id="open" class="big" type="button"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Open &amp; play</span></button>
+<button id="mine" class="ghost" type="button"><span>Make your own</span></button>
+</section>
+</aside>
+<p id="hint" class="hint"></p><p id="announce" class="sr" aria-live="polite"></p><script src="qr.js"></script><script src="grand.js"></script></body></html>
